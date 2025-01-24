@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 # Nome do usuário do GitHub e nome do repositório
@@ -11,7 +12,7 @@ LOCAL_REPO_PATH="walissonm5/walissonm2/wali"
 INITIAL_COMMIT_MSG="Primeiro commit"
 
 # URL do repositório remoto
-REMOTE_URL="https://github.com/$GITHUB_walissonm2/$REPO_wali.git"
+REMOTE_URL="https://github.com/$GITHUB_USER/$REPO_NAME.git"
 
 # Configurando Git
 git config --global user.name "walissonm2"
@@ -23,7 +24,7 @@ cd $LOCAL_REPO_PATH
 git init
 
 # Adicionando um arquivo README.md
-echo "# $REPO_wali" > README.md
+echo "# $REPO_NAME" > README.md
 git add README.md
 
 # Fazendo o commit inicial
@@ -35,4 +36,4 @@ git remote add origin $REMOTE_URL
 # Fazendo push para o repositório remoto
 git push -u origin master
 
-echo "Repositório $REPO_wali conectado ao GitHub com sucesso!"
+echo "Repositório $REPO_NAME conectado ao GitHub com sucesso!"
