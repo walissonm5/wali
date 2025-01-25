@@ -3,7 +3,7 @@
 
 # Nome do usuário do GitHub e nome do repositório
 GITHUB_USER="walissonm5"
-REPO_NAME="wali"
+REPO_NAME="wali.git"
 
 # Caminho do repositório local
 LOCAL_REPO_PATH="walissonm5/wali.git"
