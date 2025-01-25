@@ -12,7 +12,7 @@ LOCAL_REPO_PATH="walissonm5/walissonm2/wali"
 INITIAL_COMMIT_MSG="Primeiro commit"
 
 # URL do repositório remoto
-REMOTE_URL="https://github.com/$GITHUB_USER/$REPO_NAME.git"
+REMOTE_URL="https://github.com/$GITHUB_walissonm5/$REPO_wali.git"
 
 # Configurando Git
 git config --global user.name "walissonm2"
