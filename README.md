@@ -6,7 +6,7 @@ GITHUB_USER="walissonm5"
 REPO_NAME="wali"
 
 # Caminho do repositório local
-LOCAL_REPO_PATH="walissonm5/walissonm2/wali"
+LOCAL_REPO_PATH="walissonm5/wali.git"
 
 # Mensagem do commit inicial
 INITIAL_COMMIT_MSG="Primeiro commit"
@@ -15,7 +15,7 @@ INITIAL_COMMIT_MSG="Primeiro commit"
 REMOTE_URL="https://github.com/$GITHUB_walissonm5/$REPO_wali.git"
 
 # Configurando Git
-git config --global user.name "walissonm2"
+git config --global user.name "walissonm5"
 git config --global user.email "reiswalisson75@gmail.com"
 
 # Criando o repositório local
