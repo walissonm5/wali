@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identity Engine - Relatório testuser</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            border: 2px solid #00d9ff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+        }
+        h1 {
+            color: #00d9ff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #00d9ff;
+        }
+        .username {
+            color: #ff006e;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .stat-card {
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid #00d9ff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2em;
+            color: #00d9ff;
+            font-weight: bold;
+        }
+        .stat-label {
+            color: #a0aec0;
+            margin-top: 10px;
+        }
+        .results {
+            margin-top: 40px;
+        }
+        .result-item {
+            background: rgba(26, 31, 58, 0.8);
+            border-left: 4px solid #ff006e;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .result-site {
+            font-weight: bold;
+            color: #00d9ff;
+        }
+        .result-source {
+            background: #ff006e;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.8em;
+        }
+        .result-url {
+            color: #a0aec0;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid #2d3748;
+            color: #a0aec0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Identity Engine v2.0</h1>
+            <p class="username">Análise de: <strong>testuser</strong></p>
+            <p style="color: #a0aec0; margin-top: 10px;">Relatório gerado em 19/02/2026 19:33:05</p>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Perfis Encontrados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Via Sherlock</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Via Maigret</div>
+            </div>
+        </div>
+        
+        <div class="results">
+            <h2 style="color: #00d9ff; margin-bottom: 20px;">📊 Resultados</h2>
+            
+        </div>
+        
+        <footer>
+            <p>Identity Engine v2.0 - OSINT Pro | Desenvolvido para fins educacionais</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">⚠️ Use responsavelmente e em conformidade com as leis locais</p>
+        </footer>
+    </div>
+</body>
+</html>
