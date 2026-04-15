@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """PCAPCracker Pro - WPA/WPA2 Cracking Tool with AI Support"""
-import os, re, sqlite3, subprocess, hashlib, json, time
+import os, re, sqlite3, subprocess, hashlib, json, time, configparser
 from datetime import datetime
 from pathlib import Path
 from colorama import Fore, Style, init
@@ -307,7 +307,12 @@ class L:
 class AI:
     def __init__(self):
         self.client = OpenAI()
-        self.model = "gpt-4.1-mini"
+        config = configparser.ConfigParser()
+        try:
+            config.read('config.ini')
+            self.model = config.get('AI', 'MODEL', fallback='gpt-4.1-mini')
+        except Exception:
+            self.model = 'gpt-4.1-mini'
 
     def analyze_ssid(self, ssid):
         prompt = f"""Analise o SSID de rede Wi-Fi '{ssid}' e sugira estratégias de ataque de dicionário.

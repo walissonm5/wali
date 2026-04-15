@@ -14,6 +14,23 @@ Esta versão agora inclui suporte nativo a modelos de linguagem (LLM) para auxil
 - hcxtools
 - OpenAI API Key (configurada via variável de ambiente `OPENAI_API_KEY`)
 
+## ⚙️ Instalação e Configuração (Automática)
+
+Para configurar o ambiente e instalar todas as dependências automaticamente, execute o script `setup.sh`:
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+O script irá:
+1. Instalar as dependências do sistema (hashcat, hcxdumptool, hcxpcapngtool, tshark).
+2. Instalar as bibliotecas Python necessárias (openai, colorama, tqdm).
+3. Solicitar sua `OPENAI_API_KEY`.
+4. Permitir que você escolha o modelo de IA a ser utilizado (`gpt-4.1-mini`, `gemini-2.5-flash`, etc.).
+5. Criar a estrutura de diretórios (`pcap/`, `wordlist/`, `hash/`, `rules/`, `logs/`).
+6. Gerar o arquivo `config.ini` com o modelo de IA selecionado.
+
 ## 📖 Como usar
 1. Coloque seus arquivos `.pcap` na pasta `pcap/`.
 2. Adicione suas wordlists na pasta `wordlist/`.
