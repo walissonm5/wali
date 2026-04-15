@@ -31,6 +31,16 @@ O script irá:
 5. Criar a estrutura de diretórios (`pcap/`, `wordlist/`, `hash/`, `rules/`, `logs/`).
 6. Gerar o arquivo `config.ini` com o modelo de IA selecionado.
 
+## ✅ Teste da Configuração da IA
+
+Para verificar se a integração com a IA está funcionando corretamente, execute o script `test_ai.py`:
+
+```bash
+python3 test_ai.py
+```
+
+Este script verificará se a `OPENAI_API_KEY` está configurada e se o modelo de IA selecionado em `config.ini` consegue se comunicar com a API da OpenAI.
+
 ## 📖 Como usar
 1. Coloque seus arquivos `.pcap` na pasta `pcap/`.
 2. Adicione suas wordlists na pasta `wordlist/`.
