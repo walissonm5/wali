@@ -1,39 +1,27 @@
+# 🛡️ PCAPCracker Pro (AI Edition)
 
-#!/bin/bash
+Ferramenta avançada para auditoria de redes WPA/WPA2-PSK com integração de Inteligência Artificial para análise estratégica.
 
-# Nome do usuário do GitHub e nome do repositório
-GITHUB_USER="walissonm5"
-REPO_NAME="wali.git"
+## 🚀 Novidades: Suporte a IA
+Esta versão agora inclui suporte nativo a modelos de linguagem (LLM) para auxiliar no processo de pentest:
 
-# Caminho do repositório local
-LOCAL_REPO_PATH="walissonm5/wali.git"
+- **🔍 Análise Inteligente de SSID**: A IA analisa o nome da rede (SSID) para identificar padrões de provedores, modelos de roteadores ou nomes personalizados, sugerindo as melhores wordlists e estratégias de ataque.
+- **💡 Sugestões de Próximos Passos**: Com base no histórico de tentativas de crack, a IA recomenda novas abordagens, como o uso de regras específicas do Hashcat ou wordlists temáticas.
 
-# Mensagem do commit inicial
-INITIAL_COMMIT_MSG="Primeiro commit"
+## 🛠️ Requisitos
+- Python 3.x
+- Hashcat
+- hcxtools
+- OpenAI API Key (configurada via variável de ambiente `OPENAI_API_KEY`)
 
-# URL do repositório remoto
-REMOTE_URL="https://github.com/$GITHUB_walissonm5/$REPO_wali.git"
+## 📖 Como usar
+1. Coloque seus arquivos `.pcap` na pasta `pcap/`.
+2. Adicione suas wordlists na pasta `wordlist/`.
+3. Execute a ferramenta:
+   ```bash
+   python3 pcapcracker_pro.py
+   ```
+4. Use as opções **6** e **7** do menu para suporte de IA.
 
-# Configurando Git
-git config --global user.name "walissonm5"
-git config --global user.email "reiswalisson75@gmail.com"
-
-# Criando o repositório local
-mkdir -p $LOCAL_REPO_PATH
-cd $LOCAL_REPO_PATH
-git init
-
-# Adicionando um arquivo README.md
-echo "# $REPO_NAME" > README.md
-git add README.md
-
-# Fazendo o commit inicial
-git commit -m "$INITIAL_COMMIT_MSG"
-
-# Adicionando o repositório remoto
-git remote add origin $REMOTE_URL
-
-# Fazendo push para o repositório remoto
-git push -u origin master
-
-echo "Repositório $REPO_NAME conectado ao GitHub com sucesso!"
+## ⚖️ Aviso Legal
+Esta ferramenta foi desenvolvida apenas para fins educacionais e testes de penetração autorizados. O uso contra redes sem permissão explícita é ilegal.
