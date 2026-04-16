@@ -7,7 +7,7 @@ from pathlib import Path
 from colorama import Fore, Style, init
 from tqdm import tqdm
 from html import escape
-from openai import OpenAI
+from groq import Groq
 
 init(autoreset=True)
 
@@ -306,13 +306,19 @@ class L:
 # ── AI Support ─────────────────────────────────────────────
 class AI:
     def __init__(self):
-        self.client = OpenAI()
         config = configparser.ConfigParser()
         try:
             config.read('config.ini')
-            self.model = config.get('AI', 'MODEL', fallback='gpt-4.1-mini')
+            self.api_key = config.get('AI', 'GROQ_API_KEY', fallback=os.getenv("GROQ_API_KEY"))
+            self.model = config.get('AI', 'MODEL', fallback='llama-3.3-70b-versatile')
         except Exception:
-            self.model = 'gpt-4.1-mini'
+            self.api_key = os.getenv("GROQ_API_KEY")
+            self.model = 'llama-3.3-70b-versatile'
+        
+        if not self.api_key:
+            raise ValueError("GROQ_API_KEY não configurada no config.ini ou ambiente.")
+            
+        self.client = Groq(api_key=self.api_key)
 
     def analyze_ssid(self, ssid):
         prompt = f"""Analise o SSID de rede Wi-Fi '{ssid}' e sugira estratégias de ataque de dicionário.

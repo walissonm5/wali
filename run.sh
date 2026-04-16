@@ -1,11 +1,6 @@
 #!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status.
-set -e
-# Print commands and their arguments as they are executed.
-set -x
-
-REPO_DIR="$(dirname "$0")"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$REPO_DIR/.venv"
 PCAP_CRACKER_PRO_PY="$REPO_DIR/pcapcracker_pro.py"
 
@@ -29,12 +24,14 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo -e "${GREEN}[INFO]${NC} Ambiente virtual ativado. Executando PCAPCracker Pro..."
-
 # Executar o script principal
-python3 "$PCAP_CRACKER_PRO_PY"
+if [ "$1" == "test" ]; then
+    echo -e "${GREEN}[INFO]${NC} Executando teste da IA..."
+    python3 "$REPO_DIR/test_ai.py"
+else
+    echo -e "${GREEN}[INFO]${NC} Ambiente virtual ativado. Iniciando PCAPCracker Pro..."
+    python3 "$PCAP_CRACKER_PRO_PY"
+fi
 
 # Desativar o ambiente virtual ao sair
 deactivate
-
-echo -e "${GREEN}[INFO]${NC} PCAPCracker Pro finalizado. Ambiente virtual desativado."
