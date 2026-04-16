@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Exit immediately if a command exits with a non-zero status.
+set -e
+# Print commands and their arguments as they are executed.
+set -x
+
 REPO_DIR="$(dirname "$0")"
 VENV_DIR="$REPO_DIR/.venv"
 PCAP_CRACKER_PRO_PY="$REPO_DIR/pcapcracker_pro.py"

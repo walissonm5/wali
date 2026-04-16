@@ -33,6 +33,8 @@ O script irá:
 6. Criar a estrutura de diretórios (`pcap/`, `wordlist/`, `hash/`, `rules/`, `logs/`).
 7. Gerar o arquivo `config.ini` com o modelo de IA selecionado.
 
+**Observação**: O script `setup.sh` agora inclui `set -e` e `set -x` para depuração. Isso significa que ele será mais "barulhento" no terminal, mostrando cada comando executado e parando em caso de erro. Isso é útil para identificar problemas.
+
 ## ✅ Teste da Configuração da IA
 
 Para verificar se a integração com a IA está funcionando corretamente, execute o script `test_ai.py` através do `run.sh`:

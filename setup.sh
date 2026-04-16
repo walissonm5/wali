@@ -1,12 +1,17 @@
 #!/bin/bash
 
+# Exit immediately if a command exits with a non-zero status.
+set -e
+# Print commands and their arguments as they are executed.
+set -x
+
 # --- Configurações Iniciais ---
 REPO_DIR="$(dirname "$0")"
 PCAP_CRACKER_PRO_PY="$REPO_DIR/pcapcracker_pro.py"
 CONFIG_FILE="$REPO_DIR/config.ini"
 VENV_DIR="$REPO_DIR/.venv"
 
-# Cores para o terminal (corrigido o escape)
+# Cores para o terminal (corrigido o escape e aspas)
 GREEN="\033[0;32m"
 YELLOW="\033[1;33m"
 RED="\033[0;31m"
@@ -21,7 +26,9 @@ install_apt_package() {
     PACKAGE=$1
     log_info "Verificando e instalando $PACKAGE..."
     if ! dpkg -s $PACKAGE &> /dev/null; then
+        log_info "Atualizando listas de pacotes..."
         sudo apt-get update -y
+        log_info "Instalando $PACKAGE..."
         sudo apt-get install -y $PACKAGE
         if [ $? -ne 0 ]; then
             log_error "Falha ao instalar $PACKAGE. Por favor, instale manualmente ou verifique os repositórios."
@@ -55,16 +62,13 @@ install_apt_package hcxdumptool
 
 # hcxpcapngtool pode ter nome diferente ou ser parte de hcxdumptool em algumas distros
 log_info "Tentando instalar hcxpcapngtool..."
-if ! dpkg -s hcxpcapngtool &> /dev/null; then
-    sudo apt-get install -y hcxpcapngtool
-    if [ $? -ne 0 ]; then
-        log_warn "hcxpcapngtool não encontrado ou falha na instalação via apt. Pode ser parte de hcxdumptool ou requerer instalação manual."
-        log_warn "Verifique se 'hcxpcapngtool' está disponível em seus repositórios ou instale-o manualmente se necessário."
-    else
-        log_info "hcxpcapngtool instalado."
-    fi
+# Verifica se o pacote hcxpcapngtool está disponível e tenta instalar
+if apt-cache show hcxpcapngtool &> /dev/null; then
+    install_apt_package hcxpcapngtool
 else
-    log_info "hcxpcapngtool já está instalado."
+    log_warn "Pacote 'hcxpcapngtool' não encontrado nos repositórios. Verificando se 'hcxdumptool' já o inclui ou se é necessário instalar manualmente."
+    # Se hcxpcapngtool não estiver disponível como pacote separado, assume-se que hcxdumptool o fornece ou o usuário deve instalar manualmente.
+    # Não é um erro crítico para parar o script, apenas um aviso.
 fi
 
 install_apt_package tshark # Para conversão de .scap
@@ -73,7 +77,7 @@ install_apt_package tshark # Para conversão de .scap
 log_info "Criando e ativando ambiente virtual Python..."
 python3 -m venv "$VENV_DIR"
 if [ $? -ne 0 ]; then
-    log_error "Falha ao criar o ambiente virtual. Certifique-se de que 'python3-venv' esteja instalado."
+    log_error "Falha ao criar o ambiente virtual. Certifique-se de que 'python3-venv' esteja instalado e que você tenha permissões."
     exit 1
 fi
 source "$VENV_DIR/bin/activate"
