@@ -6,8 +6,8 @@ from colorama import Fore, Style, init
 init(autoreset=True)
 
 def log_info(message): print(f"{Fore.GREEN}[INFO]{Style.RESET_ALL} {message}")
-def log_warn(message): print(f"{Fore.YELLOW}[WARN]{Style.RESET_ALL} {message}")
-def log_error(message): print(f"{Fore.RED}[ERROR]{Style.RESET_ALL} {message}")
+def log_warn(message): print(f"{Fore.YELLOW}[AVISO]{Style.RESET_ALL} {message}")
+def log_error(message): print(f"{Fore.RED}[ERRO]{Style.RESET_ALL} {message}")
 
 def test_groq_configuration():
     log_info("Iniciando teste de configuração da GroqCloud...")

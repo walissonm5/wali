@@ -9,11 +9,11 @@ VENV_DIR="$REPO_DIR/.venv"
 GREEN="\033[0;32m"
 YELLOW="\033[1;33m"
 RED="\033[0;31m"
-NC="\033[0m" # No Color
+NC="\033[0m" # Sem cor
 
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[AVISO]${NC} $1"; }
+log_error() { echo -e "${RED}[ERRO]${NC} $1"; }
 
 # --- Funções de Instalação ---
 install_apt_package() {
@@ -33,16 +33,15 @@ install_apt_package() {
 
 # --- Instalação de Dependências do Sistema ---
 log_info "Iniciando instalação de dependências do sistema..."
-# No Parrot/Kali, esses pacotes costumam estar presentes, mas vamos garantir.
 install_apt_package python3-venv
 install_apt_package hashcat
 install_apt_package hcxdumptool
 install_apt_package tshark
 
 # --- Configuração do Ambiente Virtual ---
-log_info "Criando ambiente virtual em $VENV_DIR..."
+log_info "Configurando ambiente virtual em $VENV_DIR..."
 if [ -d "$VENV_DIR" ]; then
-    log_warn "Ambiente virtual já existe. Removendo para reinstalação limpa..."
+    log_warn "Ambiente virtual já existe. Recriando para garantir instalação limpa..."
     rm -rf "$VENV_DIR"
 fi
 
@@ -98,3 +97,4 @@ log_info "Configuração concluída com sucesso!"
 log_info "Para iniciar a ferramenta, use: ${GREEN}./run.sh${NC}"
 
 chmod +x "$REPO_DIR/setup.sh"
+chmod +x "$REPO_DIR/run.sh"

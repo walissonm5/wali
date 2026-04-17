@@ -7,9 +7,9 @@ PCAP_CRACKER_PRO_PY="$REPO_DIR/pcapcracker_pro.py"
 # Cores para o terminal
 GREEN="\033[0;32m"
 RED="\033[0;31m"
-NC="\033[0m" # No Color
+NC="\033[0m" # Sem cor
 
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_error() { echo -e "${RED}[ERRO]${NC} $1"; }
 
 # Verificar se o ambiente virtual existe
 if [ ! -d "$VENV_DIR" ]; then
@@ -24,7 +24,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Executar o script principal
+# Executar o script principal ou teste
 if [ "$1" == "test" ]; then
     echo -e "${GREEN}[INFO]${NC} Executando teste da IA..."
     python3 "$REPO_DIR/test_ai.py"

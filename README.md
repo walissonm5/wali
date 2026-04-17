@@ -3,7 +3,7 @@
 Ferramenta avançada para auditoria de redes WPA/WPA2-PSK com integração de Inteligência Artificial **GRATUITA** via GroqCloud.
 
 ## 🚀 Novidades: Suporte a GroqCloud (Grátis)
-Esta versão agora utiliza a API do GroqCloud, permitindo o uso de modelos de linguagem de ponta sem custos:
+Esta versão utiliza a API do GroqCloud, permitindo o uso de modelos de linguagem de ponta sem custos:
 
 - **🔍 Análise Inteligente de SSID**: A IA analisa o nome da rede (SSID) para identificar padrões de provedores ou modelos de roteadores.
 - **💡 Sugestões de Próximos Passos**: Com base no histórico de tentativas de crack, a IA recomenda novas abordagens, como wordlists ou regras do Hashcat.
