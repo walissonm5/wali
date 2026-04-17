@@ -260,35 +260,35 @@ class L:
     R  = Fore.RED; Y = Fore.YELLOW; C = Fore.CYAN; M = Fore.MAGENTA
     
     @staticmethod
-    def s(m): print(f"  {L.G}[{L.LG}✓{L.G}]{RS} {m}")
+    def s(m): print(f"  {L.G}[{L.LG}✓{L.G}]{L.RS} {m}")
     @staticmethod
     def e(m): print(f"  {L.R}[✗] {m}")
     @staticmethod
     def w(m): print(f"  {L.Y}[!] {m}")
     @staticmethod
-    def i(m): print(f"  {L.G}[{L.LG}i{L.G}]{RS} {m}")
+    def i(m): print(f"  {L.G}[{L.LG}i{L.G}]{L.RS} {m}")
     @staticmethod
-    def p(m): print(f"  {L.G}[{L.LG}*{L.G}]{RS} {m}")
+    def p(m): print(f"  {L.G}[{L.LG}*{L.G}]{L.RS} {m}")
     
     @staticmethod
     def box(title, lines):
         if isinstance(lines, str): lines = lines.split('\n')
         width = max(len(re.sub(r'\033\[[0-9;]*m', '', l)) for l in lines + [title]) + 6
-        print(f"\n  {L.G}┌{'─'*(width-2)}┐{RS}")
-        print(f"  {L.G}│{RS}  {L.LG}{title.upper()}{' '*(width-len(title)-5)}{L.G}│{RS}")
-        print(f"  {L.G}├{'─'*(width-2)}┤{RS}")
+        print(f"\n  {L.G}┌{'─'*(width-2)}┐{L.RS}")
+        print(f"  {L.G}│{L.RS}  {L.LG}{title.upper()}{' '*(width-len(title)-5)}{L.G}│{L.RS}")
+        print(f"  {L.G}├{'─'*(width-2)}┤{L.RS}")
         for l in lines:
             clean = re.sub(r'\033\[[0-9;]*m', '', l)
-            print(f"  {L.G}│{RS}  {l}{' '*(width-len(clean)-5)}{L.G}│{RS}")
-        print(f"  {L.G}└{'─'*(width-2)}┘{RS}")
+            print(f"  {L.G}│{L.RS}  {l}{' '*(width-len(clean)-5)}{L.G}│{L.RS}")
+        print(f"  {L.G}└{'─'*(width-2)}┘{L.RS}")
 
     @staticmethod
     def success_box(ssid, bssid, pwd):
         play_sound()
         lines = [
-            f"{Fore.WHITE}SSID:{RS}   {Fore.CYAN}{ssid}{RS}",
-            f"{Fore.WHITE}BSSID:{RS}  {Fore.MAGENTA}{bssid}{RS}",
-            f"{Fore.WHITE}SENHA:{RS}  {Fore.GREEN}{pwd}{RS}"
+            f"{Fore.WHITE}SSID:{L.RS}   {Fore.CYAN}{ssid}{L.RS}",
+            f"{Fore.WHITE}BSSID:{L.RS}  {Fore.MAGENTA}{bssid}{L.RS}",
+            f"{Fore.WHITE}SENHA:{L.RS}  {Fore.GREEN}{pwd}{L.RS}"
         ]
         L.box("SUCESSO: REDE QUEBRADA", lines)
 
