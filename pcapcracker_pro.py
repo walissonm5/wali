@@ -110,6 +110,9 @@ class DB:
         c.execute("""CREATE TABLE IF NOT EXISTS att(id INTEGER PRIMARY KEY,
         hmz TEXT,wmz TEXT,type TEXT,ts TEXT,cnt INT DEFAULT 1,
         UNIQUE(hmz,wmz,type))""")
+        # Nova tabela para estatísticas de senhas
+        c.execute("""CREATE TABLE IF NOT EXISTS pwd_stats(id INTEGER PRIMARY KEY,
+        pwd TEXT UNIQUE, count INTEGER DEFAULT 1, last_seen TEXT)""")
         c.commit(); c.close()
     def save(self,ss,bs,pw,pc,wl,st,hm,wm,mt):
         c=sqlite3.connect(self.p)
@@ -117,6 +120,10 @@ class DB:
             c.execute("""INSERT INTO res (ssid,bssid,pwd,pcap,ts,wl,status,hmz,wmz,method)
                         VALUES (?,?,?,?,?,?,?,?,?,?)""",
                      (ss,bs,pw,pc,datetime.now().isoformat(),wl,st,hm,wm,mt))
+            # Atualizar estatísticas de senhas
+            c.execute("""INSERT INTO pwd_stats (pwd, count, last_seen) VALUES (?, 1, ?)
+                        ON CONFLICT(pwd) DO UPDATE SET count=count+1, last_seen=?""",
+                     (pw, datetime.now().isoformat(), datetime.now().isoformat()))
             c.commit()
         except sqlite3.Error as e:
             L.e(f"Erro ao salvar no banco de dados: {e}")
@@ -185,6 +192,16 @@ class DB:
                 stats[name]["last_used"] = ts
 
         return sorted(stats.values(), key=lambda x: x["cracks"], reverse=True)
+
+    def get_pwd_ranking(self, limit=10):
+        c = sqlite3.connect(self.p)
+        try:
+            return c.execute("SELECT pwd, count, last_seen FROM pwd_stats ORDER BY count DESC LIMIT ?", (limit,)).fetchall()
+        except sqlite3.Error as e:
+            L.e(f"Erro ao recuperar ranking de senhas: {e}")
+            return []
+        finally:
+            c.close()
 
 # Utilitários
 def fhash(f):
@@ -345,7 +362,6 @@ class AI:
             self.model = 'llama-3.3-70b-versatile'
         
         if not self.api_key:
-            # Não lança erro aqui para não quebrar o script se o usuário não for usar IA
             self.client = None
         else:
             try:
@@ -367,6 +383,20 @@ class AI:
             return response.choices[0].message.content
         except Exception as e:
             return f"Erro na análise de IA: {e}"
+
+    def suggest_wordlists(self, ssid):
+        if not self.client: return "Erro: API Groq não configurada corretamente."
+        prompt = f"""Com base no SSID '{ssid}', sugira quais tipos de wordlists seriam mais eficazes.
+        Exemplo: Se for 'VIVO-XXXX', sugira wordlists de padrões de operadoras. Se for 'Joao_2023', sugira wordlists de nomes e datas.
+        Retorne uma lista curta de 3 tipos de wordlists em PORTUGUÊS."""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Erro na sugestão de wordlists: {e}"
 
     def suggest_next_steps(self, results):
         if not self.client: return "Erro: API Groq não configurada corretamente."
@@ -391,6 +421,7 @@ class AI:
 def gen_results_html(db):
     rows = db.all()
     wl_stats = db.wordlist_stats()
+    pwd_ranking = db.get_pwd_ranking(15)
     total = len(rows)
     path = f"{cfg.LOG}/results.html"
     
@@ -404,7 +435,6 @@ def gen_results_html(db):
     cards = ""
     for r in unique:
         ssid, bssid, pwd, status, ts, method, wl = r
-        status_cls = "ok" if "OK" in status.upper() or "CRACK" in status.upper() else ""
         cards += f"""
         <div class="network-card">
             <div class="network-header">
@@ -446,11 +476,35 @@ def gen_results_html(db):
             <div class="wl-count">{s['cracks']}<span class="wl-unit">quebras</span></div>
         </div>"""
 
+    # Novo: Ranking de senhas no HTML
+    pwd_rows = ""
+    if pwd_ranking:
+        max_count = max(p[1] for p in pwd_ranking)
+        for p in pwd_ranking:
+            pct = (p[1] / max_count) * 100
+            pwd_rows += f"""
+            <div class="wl-row rank-other">
+                <div class="wl-info">
+                    <div class="wl-name" style="font-family:'Orbitron';color:var(--cyan)">{escape(p[0])}</div>
+                    <div class="wl-last">Última vez vista: {p[2][:16]}</div>
+                </div>
+                <div class="wl-bar-wrap">
+                    <div class="wl-bar" style="--pct: {pct}%; background:var(--cyan)"></div>
+                </div>
+                <div class="wl-count" style="color:var(--cyan)">{p[1]}<span class="wl-unit">vezes</span></div>
+            </div>"""
+
     wl_section = f"""
     <div class="wl-section">
         <div class="section-hdr">desempenho de wordlists</div>
         <div class="wl-list">{wl_rows}</div>
     </div>""" if wl_rows else ""
+
+    pwd_section = f"""
+    <div class="wl-section">
+        <div class="section-hdr">catálogo de senhas mais comuns</div>
+        <div class="wl-list">{pwd_rows}</div>
+    </div>""" if pwd_rows else ""
 
     empty_msg = '<div class="empty">// NENHUMA SENHA QUEBRADA AINDA</div>' if not unique else ""
 
@@ -527,6 +581,7 @@ body{{background:var(--bg);color:#888;font-family:'Share Tech Mono',monospace;ov
     <div class="stat"><div class="stat-lbl">// última atualização</div><div class="stat-num" style="font-size:1em;padding-top:8px">{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</div></div>
   </div>
   {wl_section}
+  {pwd_section}
   <div class="section-hdr" style="margin-top:40px">redes alvo</div>
   {cards}{empty_msg}
   <footer class="site-footer">cyberwalisson :: pcapcracker pro &nbsp;|&nbsp; {datetime.now().strftime("%Y")} &nbsp;|&nbsp; <span style="color:var(--green)">[ USO APENAS PARA TESTES AUTORIZADOS ]</span></footer>
@@ -594,6 +649,7 @@ def log_json(db_or_data, tp="crack"):
         path = f"{cfg.JSON}/resultados.json"
         rows = db_or_data.all()
         wl_stats = db_or_data.wordlist_stats()
+        pwd_ranking = db_or_data.get_pwd_ranking(50)
 
         seen = set(); unique = []
         for r in rows:
@@ -609,6 +665,7 @@ def log_json(db_or_data, tp="crack"):
             "gerado_em": datetime.now().isoformat(),
             "total": len(unique),
             "estatisticas_wordlist": wl_stats,
+            "ranking_senhas": pwd_ranking,
             "resultados": unique
         }
         L.p(f"Atualizando resultados.json ({len(unique)} senha(s))")
@@ -703,54 +760,56 @@ class Att:
 # ── CLI ────────────────────────────────────────────────────
 class CLI:
     def __init__(self):
-        self.db=DB(cfg.DB); self.att=Att(self.db); self.ai=AI()
+        self.db=DB(cfg.DB); self.ai=AI()
+        self.att=Att(self.db)
         self.ssid_map = {}
 
     def banner(self):
         G  = '\033[38;5;22m'; LG = '\033[38;5;46m'
         RS = Style.RESET_ALL;  Y  = Fore.YELLOW
         mask = f"""
-{G}  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░{RS}
-{G}  ░  {LG} ██████╗██╗   ██╗██████╗ ███████╗██████╗{G}           ░{RS}
-{G}  ░  {LG}██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗{G}          ░{RS}
-{G}  ░  {LG}██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝{G}          ░{RS}
-{G}  ░  {LG}██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗{G}          ░{RS}
-{G}  ░  {LG}╚██████╗   ██║   ██████╔╝███████╗██║  ██║{G}          ░{RS}
-{G}  ░  {LG} ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝{G}          ░{RS}
-{G}  ░                                                       ░{RS}
-{G}  ░  {Y}     w a l i s s o n  //  WPA/WPA2  //  v2.1 IA  {G}░{RS}
-{G}  ░  {LG}  Nós somos Anonymous. Nós somos Legião.         {G}░{RS}
-{G}  ░  {LG}  Nós não perdoamos. Nós não esquecemos.         {G}░{RS}
-{G}  ░  {LG}  Esperem por nós.                               {G}░{RS}
-{G}  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░{RS}"""
+{G}  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░{L.RS}
+{G}  ░  {LG} ██████╗██╗   ██╗██████╗ ███████╗██████╗{G}           ░{L.RS}
+{G}  ░  {LG}██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗{G}          ░{L.RS}
+{G}  ░  {LG}██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝{G}          ░{L.RS}
+{G}  ░  {LG}██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗{G}          ░{L.RS}
+{G}  ░  {LG}╚██████╗   ██║   ██████╔╝███████╗██║  ██║{G}          ░{L.RS}
+{G}  ░  {LG} ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝{G}          ░{L.RS}
+{G}  ░                                                       ░{L.RS}
+{G}  ░  {Y}     w a l i s s o n  //  WPA/WPA2  //  v2.2 IA  {G}░{L.RS}
+{G}  ░  {LG}  Nós somos Anonymous. Nós somos Legião.         {G}░{L.RS}
+{G}  ░  {LG}  Nós não perdoamos. Nós não esquecemos.         {G}░{L.RS}
+{G}  ░  {LG}  Esperem por nós.                               {G}░{L.RS}
+{G}  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░{L.RS}"""
         print(mask)
 
     def menu(self):
         n   = len(self.ssid_map)
         G   = '\033[38;5;22m'; LG  = '\033[38;5;46m'
         RS  = Style.RESET_ALL;  Y   = Fore.YELLOW
-        bar = f"{G}  {'─'*50}{RS}"
+        bar = f"{G}  {'─'*50}{L.RS}"
         print(f"\n{bar}")
-        print(f"{G}  // {LG}MENU DE OPERAÇÕES{RS}")
+        print(f"{G}  // {LG}MENU DE OPERAÇÕES{L.RS}")
         print(f"{bar}")
-        print(f"  {G}[{LG}1{G}]{RS}  alvo SSID  +  wordlist única")
-        print(f"  {G}[{LG}2{G}]{RS}  alvo SSID  +  todas wordlists")
-        print(f"  {G}[{LG}3{G}]{RS}  TODOS os alvos  +  todas wordlists   {G}// TOTALMENTE AUTO{RS}")
-        print(f"  {G}[{LG}4{G}]{RS}  mostrar senhas quebradas")
-        print(f"  {G}[{LG}5{G}]{RS}  exportar CSV")
-        print(f"  {G}[{LG}6{G}]{RS}  {Y}Análise IA (Estratégia SSID){RS}")
-        print(f"  {G}[{LG}7{G}]{RS}  {Y}Sugestões IA (Próximos Passos){RS}")
-        print(f"  {G}[{LG}0{G}]{RS}  desconectar")
+        print(f"  {G}[{LG}1{G}]{L.RS}  alvo SSID  +  wordlist única")
+        print(f"  {G}[{LG}2{G}]{L.RS}  alvo SSID  +  todas wordlists")
+        print(f"  {G}[{LG}3{G}]{L.RS}  TODOS os alvos  +  todas wordlists   {G}// TOTALMENTE AUTO{L.RS}")
+        print(f"  {G}[{LG}4{G}]{L.RS}  mostrar senhas quebradas")
+        print(f"  {G}[{LG}5{G}]{L.RS}  exportar CSV")
+        print(f"  {G}[{LG}6{G}]{L.RS}  {Y}Análise IA (Estratégia SSID){L.RS}")
+        print(f"  {G}[{LG}7{G}]{L.RS}  {Y}Sugestões IA (Wordlists Ideais){L.RS}")
+        print(f"  {G}[{LG}8{G}]{L.RS}  {Y}Ranking de Senhas Mais Usadas{L.RS}")
+        print(f"  {G}[{LG}0{G}]{L.RS}  desconectar")
         print(f"{bar}")
-        print(f"  {G}alvos_em_memoria {LG}::{RS} {Y}{n}{RS}   "
-              f"{G}sessão {LG}::{RS} {Y}{datetime.now().strftime('%H:%M:%S')}{RS}")
+        print(f"  {G}alvos_em_memoria {LG}::{L.RS} {Y}{n}{L.RS}   "
+              f"{G}sessão {LG}::{L.RS} {Y}{datetime.now().strftime('%H:%M:%S')}{L.RS}")
         print(f"{bar}\n")
 
     def auto_extract(self):
         G  = '\033[38;5;22m'; LG = '\033[38;5;46m'; RS = Style.RESET_ALL
-        bar = f"{G}  {'─'*50}{RS}"
+        bar = f"{G}  {'─'*50}{L.RS}"
         print(f"\n{bar}")
-        print(f"{G}  // {LG}ESCANEANDO DIRETÓRIO PCAP{RS}")
+        print(f"{G}  // {LG}ESCANEANDO DIRETÓRIO PCAP{L.RS}")
         print(f"{bar}")
         if not os.path.exists(cfg.PCAP): os.makedirs(cfg.PCAP)
         pcaps = [f for f in os.listdir(cfg.PCAP)
@@ -765,11 +824,11 @@ class CLI:
         self.ssid_map = build_ssid_map()
         if self.ssid_map:
             print(f"\n{bar}")
-            print(f"{G}  // {LG}ALVOS IDENTIFICADOS{RS}")
+            print(f"{G}  // {LG}ALVOS IDENTIFICADOS{L.RS}")
             print(f"{bar}")
             for ssid, paths in self.ssid_map.items():
                 n = len(paths)
-                print(f"  {G}[+]{RS} {LG}{ssid}{RS}  {G}// {n} hash{'es' if n>1 else ''}{RS}")
+                print(f"  {G}[+]{L.RS} {LG}{ssid}{L.RS}  {G}// {n} hash{'es' if n>1 else ''}{L.RS}")
             print(f"{bar}")
         else:
             L.w("nenhum hash disponível após a extração")
@@ -862,11 +921,18 @@ class CLI:
         analysis = self.ai.analyze_ssid(ssid)
         L.box("ANÁLISE ESTRATÉGICA IA", analysis.split('\n'))
 
-    def ai_suggestions(self):
-        L.p("Consultando IA para sugestões baseadas nos resultados atuais...")
-        rs = self.db.all()
-        suggestions = self.ai.suggest_next_steps(rs)
-        L.box("SUGESTÕES PRÓXIMOS PASSOS IA", suggestions.split('\n'))
+    def ai_wordlist_suggestion(self):
+        ssid, _ = select_ssid(self.ssid_map)
+        if not ssid: return
+        L.p(f"Consultando IA para sugestão de wordlists para '{ssid}'...")
+        suggestion = self.ai.suggest_wordlists(ssid)
+        L.box("WORDLISTS SUGERIDAS PELA IA", suggestion.split('\n'))
+
+    def show_pwd_ranking(self):
+        ranking = self.db.get_pwd_ranking(15)
+        if not ranking: L.w("Sem estatísticas de senhas ainda."); return
+        lines = [f"{Fore.CYAN}{p[0]:<20}{L.RS} | {Fore.YELLOW}{p[1]} vezes{L.RS}" for p in ranking]
+        L.box("RANKING DE SENHAS MAIS COMUNS", lines)
 
     def run(self):
         self.banner()
@@ -880,7 +946,8 @@ class CLI:
             elif op=="4": self.show()
             elif op=="5": self.csv()
             elif op=="6": self.ai_ssid_analysis()
-            elif op=="7": self.ai_suggestions()
+            elif op=="7": self.ai_wordlist_suggestion()
+            elif op=="8": self.show_pwd_ranking()
             elif op=="0": print(f"{Fore.GREEN}Até logo!{Style.RESET_ALL}"); break
             else: L.e("Opção inválida")
 
