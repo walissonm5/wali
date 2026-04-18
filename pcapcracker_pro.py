@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""PCAPCracker Pro - Ferramenta de Auditoria WPA/WPA2 com Suporte a IA (GroqCloud)"""
-import os, re, sqlite3, subprocess, hashlib, json, time, configparser
+"""PCAPCracker Pro - Ferramenta de Auditoria WPA/WPA2 com Suporte a IA (Groq & Ollama)"""
+import os, re, sqlite3, subprocess, hashlib, json, time, configparser, requests
 from datetime import datetime
 from pathlib import Path
 from colorama import Fore, Style, init
@@ -349,73 +349,70 @@ class Ext:
             except:
                 return "DESCONHECIDO","DESCONHECIDO",None
 
-# ── AI Support ─────────────────────────────────────────────
+# ── AI Support (Groq & Ollama) ─────────────────────────────
 class AI:
     def __init__(self):
         config = configparser.ConfigParser()
         try:
             config.read('config.ini')
-            self.api_key = config.get('AI', 'GROQ_API_KEY', fallback=os.getenv("GROQ_API_KEY"))
+            self.provider = config.get('AI', 'PROVIDER', fallback='groq').lower()
             self.model = config.get('AI', 'MODEL', fallback='llama-3.3-70b-versatile')
+            self.api_key = config.get('AI', 'GROQ_API_KEY', fallback=os.getenv("GROQ_API_KEY"))
+            self.ollama_url = config.get('AI', 'OLLAMA_URL', fallback='http://localhost:11434/api/generate')
         except Exception:
-            self.api_key = os.getenv("GROQ_API_KEY")
+            self.provider = 'groq'
             self.model = 'llama-3.3-70b-versatile'
+            self.api_key = os.getenv("GROQ_API_KEY")
+            self.ollama_url = 'http://localhost:11434/api/generate'
         
-        if not self.api_key:
-            self.client = None
-        else:
+        self.client = None
+        if self.provider == 'groq' and self.api_key:
             try:
                 self.client = Groq(api_key=self.api_key)
             except:
                 self.client = None
 
+    def ask(self, prompt):
+        if self.provider == 'ollama':
+            try:
+                payload = {"model": self.model, "prompt": prompt, "stream": False}
+                r = requests.post(self.ollama_url, json=payload, timeout=30)
+                if r.status_code == 200:
+                    return r.json().get('response', 'Sem resposta do Ollama.')
+                return f"Erro Ollama: Status {r.status_code}"
+            except Exception as e:
+                return f"Erro ao conectar ao Ollama: {e}"
+        else:
+            if not self.client: return "Erro: Groq não configurado."
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                return f"Erro Groq: {e}"
+
     def analyze_ssid(self, ssid):
-        if not self.client: return "Erro: API Groq não configurada corretamente."
         prompt = f"""Analise o SSID de rede Wi-Fi '{ssid}' e sugira estratégias de ataque de dicionário.
         Identifique se o nome sugere um provedor específico (ex: VIVO, CLARO), modelo de roteador, 
         ou se parece ser um nome personalizado que pode conter padrões como datas, nomes próprios ou locais.
         Retorne uma análise curta em PORTUGUÊS e 3 sugestões de padrões de senha."""
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            return f"Erro na análise de IA: {e}"
+        return self.ask(prompt)
 
     def suggest_wordlists(self, ssid):
-        if not self.client: return "Erro: API Groq não configurada corretamente."
         prompt = f"""Com base no SSID '{ssid}', sugira quais tipos de wordlists seriam mais eficazes.
         Exemplo: Se for 'VIVO-XXXX', sugira wordlists de padrões de operadoras. Se for 'Joao_2023', sugira wordlists de nomes e datas.
         Retorne uma lista curta de 3 tipos de wordlists em PORTUGUÊS."""
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            return f"Erro na sugestão de wordlists: {e}"
+        return self.ask(prompt)
 
     def suggest_next_steps(self, results):
-        if not self.client: return "Erro: API Groq não configurada corretamente."
-        if not results:
-            return "Nenhum resultado para analisar."
-        
+        if not results: return "Nenhum resultado para analisar."
         summary = "\n".join([f"SSID: {r[0]}, BSSID: {r[1]}, Status: {r[3]}" for r in results[:10]])
-        prompt = f"""Com base nos seguintes resultados de tentativas de crack (algumas podem ter falhado):
+        prompt = f"""Com base nos seguintes resultados de tentativas de crack:
         {summary}
-        
-        Sugira os próximos passos em PORTUGUÊS. Se muitas falharam, sugira tipos de wordlists ou regras do hashcat que poderiam ser mais eficazes."""
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            return f"Erro na sugestão de IA: {e}"
+        Sugira os próximos passos em PORTUGUÊS. Recomende wordlists ou regras do hashcat."""
+        return self.ask(prompt)
 
 # ── Gerador de HTML de Resultados ──────────────────────────
 def gen_results_html(db):
@@ -476,7 +473,6 @@ def gen_results_html(db):
             <div class="wl-count">{s['cracks']}<span class="wl-unit">quebras</span></div>
         </div>"""
 
-    # Novo: Ranking de senhas no HTML
     pwd_rows = ""
     if pwd_ranking:
         max_count = max(p[1] for p in pwd_ranking)
@@ -776,7 +772,7 @@ class CLI:
 {G}  ░  {LG}╚██████╗   ██║   ██████╔╝███████╗██║  ██║{G}          ░{L.RS}
 {G}  ░  {LG} ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝{G}          ░{L.RS}
 {G}  ░                                                       ░{L.RS}
-{G}  ░  {Y}     w a l i s s o n  //  WPA/WPA2  //  v2.2 IA  {G}░{L.RS}
+{G}  ░  {Y}     w a l i s s o n  //  WPA/WPA2  //  v2.3 IA  {G}░{L.RS}
 {G}  ░  {LG}  Nós somos Anonymous. Nós somos Legião.         {G}░{L.RS}
 {G}  ░  {LG}  Nós não perdoamos. Nós não esquecemos.         {G}░{L.RS}
 {G}  ░  {LG}  Esperem por nós.                               {G}░{L.RS}
@@ -917,14 +913,14 @@ class CLI:
     def ai_ssid_analysis(self):
         ssid, _ = select_ssid(self.ssid_map)
         if not ssid: return
-        L.p(f"Analisando SSID '{ssid}' com IA...")
+        L.p(f"Analisando SSID '{ssid}' com IA ({self.ai.provider})...")
         analysis = self.ai.analyze_ssid(ssid)
         L.box("ANÁLISE ESTRATÉGICA IA", analysis.split('\n'))
 
     def ai_wordlist_suggestion(self):
         ssid, _ = select_ssid(self.ssid_map)
         if not ssid: return
-        L.p(f"Consultando IA para sugestão de wordlists para '{ssid}'...")
+        L.p(f"Consultando IA ({self.ai.provider}) para sugestão de wordlists para '{ssid}'...")
         suggestion = self.ai.suggest_wordlists(ssid)
         L.box("WORDLISTS SUGERIDAS PELA IA", suggestion.split('\n'))
 

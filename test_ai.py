@@ -1,65 +1,57 @@
-import os
-import configparser
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import os, configparser, requests
 from groq import Groq
 from colorama import Fore, Style, init
 
 init(autoreset=True)
 
-def log_info(message): print(f"{Fore.GREEN}[INFO]{Style.RESET_ALL} {message}")
-def log_warn(message): print(f"{Fore.YELLOW}[AVISO]{Style.RESET_ALL} {message}")
-def log_error(message): print(f"{Fore.RED}[ERRO]{Style.RESET_ALL} {message}")
-
-def test_groq_configuration():
-    log_info("Iniciando teste de configuração da GroqCloud...")
-
-    # 1. Ler config.ini
-    config = configparser.ConfigParser()
-    config_file_path = 'config.ini'
+def test_ai():
+    print(f"\n{Fore.CYAN}=== Teste de Configuração de IA ==={Style.RESET_ALL}\n")
     
-    if not os.path.exists(config_file_path):
-        log_error("Arquivo config.ini não encontrado. Execute ./setup.sh primeiro.")
-        return False
-        
-    try:
-        config.read(config_file_path)
-        api_key = config.get('AI', 'GROQ_API_KEY', fallback=None)
-        ai_model = config.get('AI', 'MODEL', fallback='llama-3.3-70b-versatile')
-    except Exception as e:
-        log_error(f"Erro ao ler config.ini: {e}")
-        return False
+    config = configparser.ConfigParser()
+    if not os.path.exists('config.ini'):
+        print(f"{Fore.RED}[✗] Arquivo config.ini não encontrado. Execute o ./setup.sh primeiro.{Style.RESET_ALL}")
+        return
 
-    if not api_key:
-        log_error("GROQ_API_KEY não encontrada no config.ini.")
-        return False
-        
-    log_info(f"Modelo selecionado: {ai_model}")
+    config.read('config.ini')
+    provider = config.get('AI', 'PROVIDER', fallback='groq').lower()
+    model = config.get('AI', 'MODEL', fallback='llama-3.3-70b-versatile')
+    
+    print(f"{Fore.YELLOW}[i] Provedor: {provider.upper()}")
+    print(f"{Fore.YELLOW}[i] Modelo: {model}")
 
-    # 2. Tentar fazer uma chamada simples à API da Groq
-    try:
-        client = Groq(api_key=api_key)
-        log_info(f"Tentando chamar a API da Groq com o modelo: {ai_model}...")
-        
-        completion = client.chat.completions.create(
-            model=ai_model,
-            messages=[{"role": "user", "content": "Responda apenas com a palavra 'CONECTADO'."}],
-            max_tokens=5
-        )
-        
-        response_text = completion.choices[0].message.content.strip().upper()
-        if "CONECTADO" in response_text:
-            log_info(f"Conexão com a GroqCloud bem-sucedida! Resposta: '{response_text}'")
-            return True
-        else:
-            log_error(f"A IA respondeu, mas a resposta não foi a esperada. Resposta: '{response_text}'")
-            return False
+    if provider == 'ollama':
+        url = config.get('AI', 'OLLAMA_URL', fallback='http://localhost:11434/api/generate')
+        print(f"{Fore.YELLOW}[i] URL Ollama: {url}")
+        try:
+            payload = {"model": model, "prompt": "Olá, responda apenas 'OK'", "stream": False}
+            r = requests.post(url, json=payload, timeout=10)
+            if r.status_code == 200:
+                print(f"{Fore.GREEN}[✓] Conexão com Ollama estabelecida com sucesso!{Style.RESET_ALL}")
+                print(f"{Fore.WHITE}Resposta: {r.json().get('response')}{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.RED}[✗] Erro no Ollama: Status {r.status_code}{Style.RESET_ALL}")
+        except Exception as e:
+            print(f"{Fore.RED}[✗] Falha ao conectar ao Ollama: {e}{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}[!] Certifique-se de que o Ollama está rodando e o modelo '{model}' foi baixado.{Style.RESET_ALL}")
+    
+    else:
+        api_key = config.get('AI', 'GROQ_API_KEY', fallback='')
+        if not api_key:
+            print(f"{Fore.RED}[✗] GROQ_API_KEY não encontrada no config.ini{Style.RESET_ALL}")
+            return
             
-    except Exception as e:
-        log_error(f"Falha ao conectar ou obter resposta da GroqCloud. Erro: {e}")
-        log_error("Verifique sua GROQ_API_KEY no config.ini e sua conexão com a internet.")
-        return False
+        try:
+            client = Groq(api_key=api_key)
+            chat_completion = client.chat.completions.create(
+                messages=[{"role": "user", "content": "Olá, responda apenas 'OK'"}],
+                model=model,
+            )
+            print(f"{Fore.GREEN}[✓] Conexão com GroqCloud estabelecida com sucesso!{Style.RESET_ALL}")
+            print(f"{Fore.WHITE}Resposta: {chat_completion.choices[0].message.content}{Style.RESET_ALL}")
+        except Exception as e:
+            print(f"{Fore.RED}[✗] Falha na API da Groq: {e}{Style.RESET_ALL}")
 
 if __name__ == "__main__":
-    if test_groq_configuration():
-        log_info("Teste de IA (GroqCloud) concluído com SUCESSO!")
-    else:
-        log_error("Teste de IA (GroqCloud) concluído com FALHA.")
+    test_ai()
